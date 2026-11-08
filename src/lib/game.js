@@ -76,7 +76,9 @@ export function isSettingsPlayable(settings) {
   return hasNormalOps(settings)
 }
 
-function generatePaper(settings) {
+const MAX_DUPLICATE_RETRIES = 80
+
+function createPaper(settings) {
   const ops = Object.keys(settings.opOptions).filter(op => settings.opOptions[op])
   if (ops.length === 0) return null
 
@@ -125,6 +127,17 @@ function generatePaper(settings) {
   }
 }
 
+function generatePaper(settings, used) {
+  if (!used) return createPaper(settings)
+
+  for (let attempt = 0; attempt < MAX_DUPLICATE_RETRIES; attempt++) {
+    const paper = createPaper(settings)
+    if (!paper) return null
+    if (!used.has(paper.question)) return paper
+  }
+  return null
+}
+
 function shuffle(items) {
   for (let i = items.length - 1; i > 0; i--) {
     const j = rand(0, i)
@@ -134,29 +147,33 @@ function shuffle(items) {
 }
 
 export function generatePapers(settings) {
-  if (settings.gameMode === 'table') return generateTablePapers(settings, 30)
+  const used = new Set()
+
+  if (settings.gameMode === 'table') return generateTablePapers(settings, 30, used)
 
   if (settings.gameMode === 'mix') {
-    const tablePapers = generateTablePapers(settings, 15)
-    const normalPapers = generateNormalPapers(settings, Math.max(0, 30 - tablePapers.length))
+    const tablePapers = generateTablePapers(settings, 15, used)
+    const normalPapers = generateNormalPapers(settings, Math.max(0, 30 - tablePapers.length), used)
     if (tablePapers.length === 0) return normalPapers
     if (normalPapers.length === 0) return tablePapers
     return shuffle([...normalPapers, ...tablePapers])
   }
 
-  return generateNormalPapers(settings, 30)
+  return generateNormalPapers(settings, 30, used)
 }
 
-function generateNormalPapers(settings, count) {
+function generateNormalPapers(settings, count, used = new Set()) {
   const papers = []
   for (let i = 0; i < count; i++) {
-    const paper = generatePaper(settings)
-    if (paper) papers.push(paper)
+    const paper = generatePaper(settings, used)
+    if (!paper) break
+    used.add(paper.question)
+    papers.push(paper)
   }
   return papers
 }
 
-function generateTablePapers(settings, limit) {
+function generateTablePapers(settings, limit, used = new Set()) {
   const activeOps = Object.entries(settings.tableOps).filter(([, active]) => active).map(([op]) => op)
   const activeTables = Object.entries(settings.selectedTables)
     .filter(([, active]) => active)
@@ -179,7 +196,15 @@ function generateTablePapers(settings, limit) {
 
   shuffle(all)
 
-  return all.slice(0, limit).map((paper, i) => ({
+  const selected = []
+  for (const paper of all) {
+    if (used.has(paper.question)) continue
+    used.add(paper.question)
+    selected.push(paper)
+    if (selected.length >= limit) break
+  }
+
+  return selected.map((paper, i) => ({
     id: `p-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
     ...paper,
     color: COLORS[rand(0, COLORS.length - 1)]
@@ -214,6 +239,16 @@ export function createGame(settings) {
   }
 }
 
+function uniquePapers(papers) {
+  const seen = new Set()
+  return papers.filter(paper => {
+    if (!paper || typeof paper.question !== 'string' || !Number.isFinite(paper.answer)) return false
+    if (seen.has(paper.question)) return false
+    seen.add(paper.question)
+    return true
+  })
+}
+
 export function normalizeGame(raw) {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.papers)) return null
 
@@ -228,7 +263,7 @@ export function normalizeGame(raw) {
     mode: raw.mode === 'input' ? 'input' : 'flip',
     duration,
     maxTimePerCalc,
-    papers: raw.papers.filter(p => p && typeof p.question === 'string' && Number.isFinite(p.answer)),
+    papers: uniquePapers(raw.papers),
     history: Array.isArray(raw.history) ? raw.history : [],
     answerLocked: Boolean(raw.answerLocked),
     streak: Number.isFinite(raw.streak) ? raw.streak : 0,
