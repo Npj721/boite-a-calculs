@@ -1,4 +1,5 @@
 <script setup>
+import Swal from 'sweetalert2'
 import { formatTime } from '@/lib/game'
 
 const props = defineProps({
@@ -29,8 +30,19 @@ function gameIcon(game) {
   return '🧮'
 }
 
-function confirmDelete(game) {
-  if (window.confirm('Supprimer cette partie en cours ?')) {
+async function confirmDelete(game) {
+  const result = await Swal.fire({
+    title: 'Supprimer cette partie ?',
+    text: 'La partie en cours sera définitivement perdue.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Supprimer',
+    cancelButtonText: 'Annuler',
+    confirmButtonColor: '#FF6B6B',
+    cancelButtonColor: '#999999',
+    reverseButtons: true
+  })
+  if (result.isConfirmed) {
     emit('delete', game.id)
   }
 }
@@ -92,6 +104,7 @@ function confirmDelete(game) {
       <div class="best-row">
         <span class="best-percent">{{ bestScore.percent }}%</span>
         <span class="best-detail">{{ bestScore.correct }}/{{ bestScore.total }}</span>
+        <span v-if="bestScore.name" class="best-name">👤 {{ bestScore.name }}</span>
         <span class="best-count">{{ scores.length }} partie{{ scores.length > 1 ? 's' : '' }} terminée{{ scores.length > 1 ? 's' : '' }}</span>
       </div>
     </div>
@@ -335,6 +348,15 @@ function confirmDelete(game) {
   font-size: 1rem;
   color: #666;
   font-weight: bold;
+}
+
+.best-name {
+  font-size: 0.9rem;
+  color: #4ECDC4;
+  font-weight: bold;
+  background: rgba(78, 205, 196, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 50px;
 }
 
 .best-count {

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import Swal from 'sweetalert2'
 import MainMenu from './MainMenu.vue'
 import SettingsPanel from './SettingsPanel.vue'
 import GameSession from './GameSession.vue'
@@ -39,6 +40,7 @@ const draftInvalid = computed(() => !isSettingsPlayable(draft.value))
 
 const resultGame = computed(() => lastResult.value ? lastResult.value.game : null)
 const resultBestScore = computed(() => lastResult.value ? lastResult.value.previousBest : null)
+const resultName = computed(() => lastResult.value && lastResult.value.name ? lastResult.value.name : '')
 const resultPercent = computed(() => {
   const game = resultGame.value
   return game && game.total ? Math.round(game.correct / game.total * 100) : 0
@@ -146,31 +148,75 @@ function exitToMenu() {
   activeGameId.value = null
 }
 
-function handleFinished() {
+async function promptBestScoreName(percent) {
+  const result = await Swal.fire({
+    title: '🏆 Nouveau meilleur score !',
+    html: `Tu as réalisé <b>${percent}%</b>.<br>Quel nom veux-tu donner à ce score ?`,
+    input: 'text',
+    inputPlaceholder: 'Ton nom...',
+    inputAttributes: {
+      maxlength: 30,
+      autocapitalize: 'off',
+      autocomplete: 'off'
+    },
+    timer: 60000,
+    timerProgressBar: true,
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showCancelButton: false,
+    confirmButtonText: 'Valider',
+    confirmButtonColor: '#FF6B6B',
+    didOpen: () => {
+      const input = Swal.getInput()
+      if (input) input.focus()
+    }
+  })
+
+  if (result.isDismissed) return 'Jordinateur'
+  const name = (result.value || '').trim()
+  return name || 'Jordinateur'
+}
+
+async function handleFinished() {
   const game = activeGame.value
   if (!game) return
   game.status = 'finished'
 
   const previousBest = bestOf(scores.value)
   const percent = game.total ? Math.round(game.correct / game.total * 100) : 0
+  const isNewBest = game.total > 0 && (!previousBest || percent > previousBest.percent)
 
-  if (game.total > 0) {
-    scores.value.push({
-      date: Date.now(),
-      correct: game.correct,
-      total: game.total,
-      percent,
-      mode: game.mode,
-      gameMode: game.gameMode,
-      duration: game.duration,
-      finishReason: game.finishReason
-    })
-  }
+  const entry = game.total > 0
+    ? {
+        date: Date.now(),
+        correct: game.correct,
+        total: game.total,
+        percent,
+        mode: game.mode,
+        gameMode: game.gameMode,
+        duration: game.duration,
+        finishReason: game.finishReason,
+        name: 'Jordinateur'
+      }
+    : null
+
+  if (entry) scores.value.push(entry)
 
   lastResult.value = { game: clone(game), previousBest }
   games.value = games.value.filter(item => item.id !== game.id)
   activeGameId.value = null
   view.value = 'results'
+
+  if (isNewBest) {
+    const name = await promptBestScoreName(percent)
+    const savedIndex = scores.value.findIndex(score => score.date === entry.date)
+    if (savedIndex !== -1) {
+      scores.value[savedIndex].name = name
+    }
+    if (lastResult.value) {
+      lastResult.value.name = name
+    }
+  }
 }
 
 function backToMenu() {
@@ -258,6 +304,7 @@ function cancelReview() {
         :score-percent="resultPercent"
         :best-score="resultBestScore"
         :finish-reason="resultGame.finishReason"
+        :player-name="resultName"
         :history="resultGame.history"
         :scores="scores"
         @new-game="openNewGame"

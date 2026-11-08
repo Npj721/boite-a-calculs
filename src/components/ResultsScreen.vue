@@ -5,6 +5,7 @@ defineProps({
   scorePercent: Number,
   bestScore: Object,
   finishReason: String,
+  playerName: String,
   history: Array,
   scores: Array
 })
@@ -29,6 +30,7 @@ const emit = defineEmits(['new-game', 'back-to-menu', 'start-review'])
 
       <div v-if="total > 0 && (!bestScore || scorePercent > bestScore.percent)" class="new-record">
         ⭐ Nouveau record !
+        <span v-if="playerName" class="record-name">— {{ playerName }}</span>
       </div>
 
       <div v-if="history.length > 0" class="history-list">
@@ -64,6 +66,7 @@ const emit = defineEmits(['new-game', 'back-to-menu', 'start-review'])
         >
           <span class="scores-mini-pct">{{ s.percent }}%</span>
           <span class="scores-mini-detail">{{ s.correct }}/{{ s.total }}</span>
+          <span v-if="s.name" class="scores-mini-name">{{ s.name }}</span>
           <span class="scores-mini-date">{{ new Date(s.date).toLocaleDateString() }}</span>
         </div>
       </div>
@@ -146,6 +149,10 @@ const emit = defineEmits(['new-game', 'back-to-menu', 'start-review'])
   font-weight: bold;
   color: #FFB347;
   animation: pop 0.5s ease;
+}
+
+.record-name {
+  color: #4ECDC4;
 }
 
 @keyframes pop {
@@ -269,6 +276,16 @@ const emit = defineEmits(['new-game', 'back-to-menu', 'start-review'])
 .scores-mini-detail {
   color: #666;
   min-width: 50px;
+}
+
+.scores-mini-name {
+  color: #4ECDC4;
+  font-weight: bold;
+  font-size: 0.8rem;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scores-mini-date {
