@@ -4,11 +4,12 @@ defineProps({
   total: Number,
   scorePercent: Number,
   bestScore: Object,
+  finishReason: String,
   history: Array,
   scores: Array
 })
 
-const emit = defineEmits(['new-game', 'start-review'])
+const emit = defineEmits(['new-game', 'back-to-menu', 'start-review'])
 </script>
 
 <template>
@@ -16,7 +17,7 @@ const emit = defineEmits(['new-game', 'start-review'])
     <div class="results-card">
       <div class="results-header">
         <span class="results-icon">🏆</span>
-        <h2>Temps écoulé !</h2>
+        <h2>{{ finishReason === 'empty' ? 'Toutes les cartes terminées !' : 'Temps écoulé !' }}</h2>
       </div>
       <div class="results-score">
         <span class="results-num">{{ correct }}</span>
@@ -26,7 +27,7 @@ const emit = defineEmits(['new-game', 'start-review'])
       </div>
       <p class="results-label">bonnes réponses</p>
 
-      <div v-if="bestScore && scorePercent >= bestScore.percent && total > 0" class="new-record">
+      <div v-if="total > 0 && (!bestScore || scorePercent > bestScore.percent)" class="new-record">
         ⭐ Nouveau record !
       </div>
 
@@ -50,6 +51,7 @@ const emit = defineEmits(['new-game', 'start-review'])
       </div>
 
       <div class="results-actions">
+        <button class="btn btn-back" @click="emit('back-to-menu')">☰ Menu</button>
         <button class="btn btn-start" @click="emit('new-game')">🔄 Nouvelle partie</button>
       </div>
 
@@ -215,16 +217,24 @@ const emit = defineEmits(['new-game', 'start-review'])
 
 .results-actions {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.6rem;
   justify-content: center;
   margin-top: 0.5rem;
+  flex-wrap: wrap;
 }
+
+.btn-back {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.btn-back:hover { background: #e0e0e0; }
 
 .btn-start {
   background: linear-gradient(135deg, #FF6B6B, #ee5a24);
   color: white;
-  font-size: 1.4rem;
-  padding: 1.2rem 3rem;
+  font-size: 1.15rem;
+  padding: 1rem 2rem;
   box-shadow: 0 6px 25px rgba(255, 107, 107, 0.4);
 }
 

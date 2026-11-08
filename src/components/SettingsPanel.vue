@@ -2,23 +2,27 @@
 defineProps({
   gameMode: String,
   mode: String,
+  duration: Number,
   localMaxTime: Number,
   opOptions: Object,
   localConfig: Object,
   tableOps: Object,
   selectedTables: Object,
+  invalid: Boolean,
 })
 
 const emit = defineEmits([
   'toggle-settings',
   'update:gameMode',
   'update:mode',
+  'update:duration',
   'update:localMaxTime',
   'toggle-op',
   'update-config',
   'update:tableOps',
   'update:selectedTables',
-  'reset-config'
+  'reset-config',
+  'start-game'
 ])
 
 function u(op, key, val) {
@@ -31,7 +35,7 @@ function u(op, key, val) {
     <div class="settings-overlay" @click.self="emit('toggle-settings')"></div>
     <div class="settings-panel">
     <div class="settings-header">
-      <h2>⚙️ Paramètres</h2>
+      <h2>🚀 Nouvelle partie</h2>
       <button class="settings-close" @click="emit('toggle-settings')">✕</button>
     </div>
 
@@ -43,9 +47,31 @@ function u(op, key, val) {
         </div>
       </div>
 
+      <div class="setting-group">
+        <div class="setting-title">Durée de la partie</div>
+        <div class="duration-row">
+          <button
+            v-for="preset in [60, 120, 180]"
+            :key="preset"
+            class="duration-btn"
+            :class="{ active: duration === preset }"
+            @click="emit('update:duration', preset)"
+          >{{ preset }} s</button>
+          <input
+            class="range-input range-full"
+            type="number"
+            :value="duration"
+            @input="emit('update:duration', +$event.target.value)"
+            min="10"
+            max="600"
+            step="10"
+          >
+        </div>
+      </div>
+
       <template v-if="gameMode === 'normal'">
         <div class="setting-group">
-          <div class="setting-title">Mode de jeu</div>
+          <div class="setting-title">Mode de réponse</div>
           <div class="mode-toggle">
             <span class="mode-label" :class="{ active: mode === 'flip' }" @click="emit('update:mode', 'flip')">🃏 Retourner</span>
             <div class="toggle-track" @click="emit('update:mode', mode === 'flip' ? 'input' : 'flip')">
@@ -153,7 +179,7 @@ function u(op, key, val) {
         </div>
 
         <div class="setting-group">
-          <div class="setting-title">Mode de jeu</div>
+          <div class="setting-title">Mode de réponse</div>
           <div class="mode-toggle">
             <span class="mode-label" :class="{ active: mode === 'flip' }" @click="emit('update:mode', 'flip')">🃏 Retourner</span>
             <div class="toggle-track" @click="emit('update:mode', mode === 'flip' ? 'input' : 'flip')">
@@ -169,6 +195,10 @@ function u(op, key, val) {
         </div>
       </template>
 
+      <p v-if="invalid" class="settings-warn">
+        {{ gameMode === 'table' ? 'Choisis au moins une table et une opération.' : 'Choisis au moins une opération.' }}
+      </p>
+      <button class="btn btn-start-game" :disabled="invalid" @click="emit('start-game')">🏁 Démarrer la partie</button>
       <button class="btn btn-reset-config" @click="emit('reset-config')">↺ Réinitialiser</button>
     </div>
     </div>
@@ -309,6 +339,61 @@ function u(op, key, val) {
 }
 
 .btn-reset-config:hover { background: #e0e0e0; color: #333; }
+
+.duration-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.duration-btn {
+  flex: 1;
+  min-width: 64px;
+  height: 40px;
+  border: 3px solid #ddd;
+  border-radius: 10px;
+  background: #f5f5f5;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #999;
+  font-family: inherit;
+}
+
+.duration-btn.active {
+  border-color: #4ECDC4;
+  background: white;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.settings-warn {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #FF6B6B;
+  text-align: center;
+}
+
+.btn-start-game {
+  background: linear-gradient(135deg, #FF6B6B, #ee5a24);
+  color: white;
+  font-size: 1.1rem;
+  padding: 1rem 1.5rem;
+  width: 100%;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.4);
+}
+
+.btn-start-game:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
 .mode-selector {
   display: flex;
