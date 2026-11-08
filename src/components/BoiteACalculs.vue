@@ -459,7 +459,7 @@ function nextPaper() {
   <div class="boite-container">
     <div class="header">
       <div class="header-top">
-        <h1 class="title">🧮 Boîte à Calculs</h1>
+        <h1 class="title">Boîte à Calculs</h1>
         <button class="settings-btn" :class="{ open: showSettings }" @click="toggleSettings" title="Paramètres">⚙️</button>
       </div>
       <div v-if="gamePhase === 'playing'" class="timer" :class="{ urgent: timerUrgent, paused: timerPaused }">

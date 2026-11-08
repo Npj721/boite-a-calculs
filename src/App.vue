@@ -1,7 +1,7 @@
 <script setup>
-import BoiteAKalkul from '@/components/BoiteAKalkul.vue'
+import BoiteACalculs from '@/components/BoiteACalculs.vue'
 </script>
 
 <template>
-  <BoiteAKalkul />
+  <BoiteACalculs />
 </template>
