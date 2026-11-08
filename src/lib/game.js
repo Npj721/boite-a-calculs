@@ -38,10 +38,12 @@ export function normalizeSettings(raw) {
   const base = defaultSettings()
   if (!raw || typeof raw !== 'object') return base
 
+  const gameMode = raw.gameMode === 'table' || raw.gameMode === 'mix' ? raw.gameMode : 'normal'
+
   const settings = {
     ...base,
     ...raw,
-    gameMode: raw.gameMode === 'table' ? 'table' : 'normal',
+    gameMode,
     mode: raw.mode === 'input' ? 'input' : 'flip',
     duration: clampInt(raw.duration, 10, 600, base.duration),
     maxTimePerCalc: clampInt(raw.maxTimePerCalc, 5, 120, base.maxTimePerCalc),
@@ -58,12 +60,20 @@ export function normalizeSettings(raw) {
   return settings
 }
 
+function hasNormalOps(settings) {
+  return Object.values(settings.opOptions || {}).some(Boolean)
+}
+
+function hasTableSelection(settings) {
+  return Object.values(settings.tableOps || {}).some(Boolean) &&
+    Object.values(settings.selectedTables || {}).some(Boolean)
+}
+
 export function isSettingsPlayable(settings) {
   if (!settings) return false
-  if (settings.gameMode === 'table') {
-    return Object.values(settings.tableOps).some(Boolean) && Object.values(settings.selectedTables).some(Boolean)
-  }
-  return Object.values(settings.opOptions).some(Boolean)
+  if (settings.gameMode === 'table') return hasTableSelection(settings)
+  if (settings.gameMode === 'mix') return hasNormalOps(settings) && hasTableSelection(settings)
+  return hasNormalOps(settings)
 }
 
 function generatePaper(settings) {
@@ -124,42 +134,56 @@ function shuffle(items) {
 }
 
 export function generatePapers(settings) {
-  if (settings.gameMode === 'table') {
-    const activeOps = Object.entries(settings.tableOps).filter(([, active]) => active).map(([op]) => op)
-    const activeTables = Object.entries(settings.selectedTables)
-      .filter(([, active]) => active)
-      .map(([n]) => parseInt(n, 10))
+  if (settings.gameMode === 'table') return generateTablePapers(settings, 30)
 
-    if (activeOps.length === 0 || activeTables.length === 0) return []
-
-    const all = []
-    for (const table of activeTables) {
-      for (let a = 1; a <= 9; a++) {
-        for (const op of activeOps) {
-          if (op === '×') {
-            all.push({ question: `${a} × ${table}`, answer: a * table, op })
-          } else {
-            all.push({ question: `${a * table} ÷ ${table}`, answer: a, op })
-          }
-        }
-      }
-    }
-
-    shuffle(all)
-
-    return all.slice(0, 30).map((paper, i) => ({
-      id: `p-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
-      ...paper,
-      color: COLORS[rand(0, COLORS.length - 1)]
-    }))
+  if (settings.gameMode === 'mix') {
+    const tablePapers = generateTablePapers(settings, 15)
+    const normalPapers = generateNormalPapers(settings, Math.max(0, 30 - tablePapers.length))
+    if (tablePapers.length === 0) return normalPapers
+    if (normalPapers.length === 0) return tablePapers
+    return shuffle([...normalPapers, ...tablePapers])
   }
 
+  return generateNormalPapers(settings, 30)
+}
+
+function generateNormalPapers(settings, count) {
   const papers = []
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < count; i++) {
     const paper = generatePaper(settings)
     if (paper) papers.push(paper)
   }
   return papers
+}
+
+function generateTablePapers(settings, limit) {
+  const activeOps = Object.entries(settings.tableOps).filter(([, active]) => active).map(([op]) => op)
+  const activeTables = Object.entries(settings.selectedTables)
+    .filter(([, active]) => active)
+    .map(([n]) => parseInt(n, 10))
+
+  if (activeOps.length === 0 || activeTables.length === 0) return []
+
+  const all = []
+  for (const table of activeTables) {
+    for (let a = 1; a <= 9; a++) {
+      for (const op of activeOps) {
+        if (op === '×') {
+          all.push({ question: `${a} × ${table}`, answer: a * table, op })
+        } else {
+          all.push({ question: `${a * table} ÷ ${table}`, answer: a, op })
+        }
+      }
+    }
+  }
+
+  shuffle(all)
+
+  return all.slice(0, limit).map((paper, i) => ({
+    id: `p-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+    ...paper,
+    color: COLORS[rand(0, COLORS.length - 1)]
+  }))
 }
 
 export function createGame(settings) {
@@ -200,7 +224,7 @@ export function normalizeGame(raw) {
     ...raw,
     id: typeof raw.id === 'string' ? raw.id : `g-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     createdAt: Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now(),
-    gameMode: raw.gameMode === 'table' ? 'table' : 'normal',
+    gameMode: raw.gameMode === 'table' || raw.gameMode === 'mix' ? raw.gameMode : 'normal',
     mode: raw.mode === 'input' ? 'input' : 'flip',
     duration,
     maxTimePerCalc,

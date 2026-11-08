@@ -81,7 +81,11 @@ const message = computed(() => {
   return ''
 })
 
-const modeTitle = computed(() => game.gameMode === 'table' ? '📋 Tables' : '🧮 Calculs')
+const modeTitle = computed(() => {
+  if (game.gameMode === 'table') return '📋 Tables'
+  if (game.gameMode === 'mix') return '🔀 Mixte'
+  return '🧮 Calculs'
+})
 
 function startGameTimer() {
   stopGameTimer()

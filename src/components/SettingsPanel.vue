@@ -42,7 +42,8 @@ function u(op, key, val) {
     <div class="settings-body">
       <div class="setting-group">
         <div class="mode-selector">
-          <button :class="{ active: gameMode === 'normal' }" @click="emit('update:gameMode', 'normal')">🧮 Boîte à calcul</button>
+          <button :class="{ active: gameMode === 'normal' }" @click="emit('update:gameMode', 'normal')">🧮 Normal</button>
+          <button :class="{ active: gameMode === 'mix' }" @click="emit('update:gameMode', 'mix')">🔀 Mixte</button>
           <button :class="{ active: gameMode === 'table' }" @click="emit('update:gameMode', 'table')">📋 Tables</button>
         </div>
       </div>
@@ -69,25 +70,27 @@ function u(op, key, val) {
         </div>
       </div>
 
-      <template v-if="gameMode === 'normal'">
-        <div class="setting-group">
-          <div class="setting-title">Mode de réponse</div>
-          <div class="mode-toggle">
-            <span class="mode-label" :class="{ active: mode === 'flip' }" @click="emit('update:mode', 'flip')">🃏 Retourner</span>
-            <div class="toggle-track" @click="emit('update:mode', mode === 'flip' ? 'input' : 'flip')">
-              <div class="toggle-knob" :class="{ right: mode === 'input' }"></div>
-            </div>
-            <span class="mode-label" :class="{ active: mode === 'input' }" @click="emit('update:mode', 'input')">✏️ Écrire</span>
+      <div class="setting-group">
+        <div class="setting-title">Mode de réponse</div>
+        <div class="mode-toggle">
+          <span class="mode-label" :class="{ active: mode === 'flip' }" @click="emit('update:mode', 'flip')">🃏 Retourner</span>
+          <div class="toggle-track" @click="emit('update:mode', mode === 'flip' ? 'input' : 'flip')">
+            <div class="toggle-knob" :class="{ right: mode === 'input' }"></div>
           </div>
-          <div class="range-row" style="margin-top: 0.5rem">
-            <label>⏱️</label>
-            <input class="range-input range-full" type="number" :value="localMaxTime" @input="emit('update:localMaxTime', +$event.target.value)" min="5" max="120">
-            <span class="range-label">secondes max / calcul</span>
-          </div>
+          <span class="mode-label" :class="{ active: mode === 'input' }" @click="emit('update:mode', 'input')">✏️ Écrire</span>
         </div>
+        <div class="range-row" style="margin-top: 0.5rem">
+          <label>⏱️</label>
+          <input class="range-input range-full" type="number" :value="localMaxTime" @input="emit('update:localMaxTime', +$event.target.value)" min="5" max="120">
+          <span class="range-label">secondes max / calcul</span>
+        </div>
+      </div>
 
+      <div v-if="gameMode === 'mix'" class="settings-section-label">Partie calculs</div>
+
+      <template v-if="gameMode === 'normal' || gameMode === 'mix'">
         <div class="setting-group">
-          <div class="setting-title">Opérations</div>
+          <div class="setting-title">{{ gameMode === 'mix' ? 'Opérations calculs' : 'Opérations' }}</div>
           <div class="op-toggles">
             <button v-for="op in ['+', '-', '×', '÷']" :key="op" class="op-btn" :class="{ active: opOptions[op] }" @click="emit('toggle-op', op)">{{ op }}</button>
           </div>
@@ -163,7 +166,9 @@ function u(op, key, val) {
         </div>
       </template>
 
-      <template v-if="gameMode === 'table'">
+      <div v-if="gameMode === 'mix'" class="settings-section-label">Partie tables</div>
+
+      <template v-if="gameMode === 'table' || gameMode === 'mix'">
         <div class="setting-group">
           <div class="setting-title">Tables de multiplication</div>
           <div class="table-grid">
@@ -172,31 +177,15 @@ function u(op, key, val) {
         </div>
 
         <div class="setting-group">
-          <div class="setting-title">Opérations</div>
+          <div class="setting-title">{{ gameMode === 'mix' ? 'Opérations tables' : 'Opérations' }}</div>
           <div class="op-toggles">
             <button v-for="op in ['×', '÷']" :key="op" class="op-btn" :class="{ active: tableOps[op] }" @click="emit('update:tableOps', { ...tableOps, [op]: !tableOps[op] })">{{ op }}</button>
-          </div>
-        </div>
-
-        <div class="setting-group">
-          <div class="setting-title">Mode de réponse</div>
-          <div class="mode-toggle">
-            <span class="mode-label" :class="{ active: mode === 'flip' }" @click="emit('update:mode', 'flip')">🃏 Retourner</span>
-            <div class="toggle-track" @click="emit('update:mode', mode === 'flip' ? 'input' : 'flip')">
-              <div class="toggle-knob" :class="{ right: mode === 'input' }"></div>
-            </div>
-            <span class="mode-label" :class="{ active: mode === 'input' }" @click="emit('update:mode', 'input')">✏️ Écrire</span>
-          </div>
-          <div class="range-row" style="margin-top: 0.5rem">
-            <label>⏱️</label>
-            <input class="range-input range-full" type="number" :value="localMaxTime" @input="emit('update:localMaxTime', +$event.target.value)" min="5" max="120">
-            <span class="range-label">secondes max / calcul</span>
           </div>
         </div>
       </template>
 
       <p v-if="invalid" class="settings-warn">
-        {{ gameMode === 'table' ? 'Choisis au moins une table et une opération.' : 'Choisis au moins une opération.' }}
+        {{ gameMode === 'table' ? 'Choisis au moins une table et une opération.' : gameMode === 'mix' ? 'Choisis au moins un calcul et une table avec une opération.' : 'Choisis au moins une opération.' }}
       </p>
       <button class="btn btn-start-game" :disabled="invalid" @click="emit('start-game')">🏁 Démarrer la partie</button>
       <button class="btn btn-reset-config" @click="emit('reset-config')">↺ Réinitialiser</button>
@@ -289,6 +278,19 @@ function u(op, key, val) {
   margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.settings-section-label {
+  margin-top: 0.2rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  background: #e6f6f4;
+  color: #2f8f84;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 
 .range-row {

@@ -14,11 +14,19 @@ function gamePercent(game) {
 }
 
 function gameLabel(game) {
-  return game.gameMode === 'table' ? 'Tables' : 'Calculs'
+  if (game.gameMode === 'table') return 'Tables'
+  if (game.gameMode === 'mix') return 'Mixte'
+  return 'Calculs'
 }
 
 function modeLabel(game) {
   return game.mode === 'input' ? '✏️ Écrire' : '🃏 Retourner'
+}
+
+function gameIcon(game) {
+  if (game.gameMode === 'table') return '📋'
+  if (game.gameMode === 'mix') return '🔀'
+  return '🧮'
 }
 
 function confirmDelete(game) {
@@ -40,6 +48,11 @@ function confirmDelete(game) {
           <span class="choice-title">Mode normal</span>
           <span class="choice-sub">+ − × ÷</span>
         </button>
+        <button class="mode-choice mix" @click="emit('new-game', 'mix')">
+          <span class="choice-icon">🔀</span>
+          <span class="choice-title">Mode mixte</span>
+          <span class="choice-sub">Calculs + tables</span>
+        </button>
         <button class="mode-choice table" @click="emit('new-game', 'table')">
           <span class="choice-icon">📋</span>
           <span class="choice-title">Mode tables</span>
@@ -53,7 +66,7 @@ function confirmDelete(game) {
       <div class="game-list">
         <div v-for="game in games" :key="game.id" class="game-card">
           <div class="game-main" @click="emit('resume', game.id)">
-            <div class="game-badge">{{ game.gameMode === 'table' ? '📋' : '🧮' }}</div>
+            <div class="game-badge">{{ gameIcon(game) }}</div>
             <div class="game-info">
               <div class="game-name">{{ gameLabel(game) }} · {{ modeLabel(game) }}</div>
               <div class="game-meta">
@@ -131,10 +144,11 @@ function confirmDelete(game) {
   gap: 0.7rem;
   width: 100%;
   margin-top: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .mode-choice {
-  flex: 1;
+  flex: 1 1 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -150,6 +164,7 @@ function confirmDelete(game) {
 }
 
 .mode-choice.normal { background: linear-gradient(135deg, #FF6B6B, #ee5a24); }
+.mode-choice.mix { background: linear-gradient(135deg, #667eea, #764ba2); }
 .mode-choice.table { background: linear-gradient(135deg, #4ECDC4, #44B09E); }
 
 .mode-choice:hover {
