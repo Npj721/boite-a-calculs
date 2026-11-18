@@ -16,15 +16,12 @@ function clampInt(value, min, max, fallback) {
 
 export function digitRange(digits) {
   const d = clampInt(digits, 1, 4, 1)
-  if (d <= 1) return [1, 9]
-  const min = 10 ** (d - 1)
-  const max = 10 ** d - 1
-  return [min, max]
+  return [1, 10 ** d - 1]
 }
 
 export function randDigits(digits) {
-  const [min, max] = digitRange(digits)
-  return rand(min, max)
+  const [, max] = digitRange(digits)
+  return rand(1, max)
 }
 
 function digitsFromMax(max) {
@@ -72,7 +69,7 @@ export const DIFFICULTY_PRESETS = {
   easy: {
     label: 'Facile',
     icon: '🌱',
-    description: 'Petits nombres (1 chiffre)',
+    description: 'Nombres jusqu’à 1 chiffre',
     opOptions: { '+': true, '-': true, '×': true, '÷': true },
     config: {
       '+': { aDigits: 1, bDigits: 1 },
@@ -84,14 +81,14 @@ export const DIFFICULTY_PRESETS = {
   medium: {
     label: 'Moyen',
     icon: '⚖️',
-    description: 'Nombres à 2 chiffres',
+    description: 'Nombres jusqu’à 2 chiffres',
     opOptions: { '+': true, '-': true, '×': true, '÷': true },
     config: clone(DEFAULT_CONFIG)
   },
   hard: {
     label: 'Difficile',
     icon: '🔥',
-    description: 'Grands nombres (2 à 3 chiffres)',
+    description: 'Nombres jusqu’à 3 chiffres',
     opOptions: { '+': true, '-': true, '×': true, '÷': true },
     config: {
       '+': { aDigits: 3, bDigits: 2 },
@@ -181,10 +178,10 @@ function createPaper(settings) {
     }
     case '-': {
       const c = cfg['-']
+      const [, aMax] = digitRange(c.aDigits)
       b = randDigits(c.bDigits)
-      const [aMin, aMax] = digitRange(c.aDigits)
-      const minA = Math.max(aMin, b)
-      a = minA <= aMax ? rand(minA, aMax) : b
+      if (b > aMax) b = rand(1, aMax)
+      a = rand(b, aMax)
       answer = a - b
       break
     }
@@ -197,22 +194,21 @@ function createPaper(settings) {
     }
     case '÷': {
       const c = cfg['÷']
-      const [aMin, aMax] = digitRange(c.aDigits)
+      const [, aMax] = digitRange(c.aDigits)
+      const [, bMaxConfig] = digitRange(c.bDigits)
       for (let attempt = 0; attempt < 40; attempt++) {
-        b = randDigits(c.bDigits)
-        if (b === 0) continue
-        const kMin = Math.ceil(aMin / b)
+        b = rand(1, bMaxConfig)
         const kMax = Math.floor(aMax / b)
-        if (kMin <= kMax) {
-          answer = rand(kMin, kMax)
+        if (kMax >= 1) {
+          answer = rand(1, kMax)
           a = b * answer
           break
         }
       }
       if (a == null) {
-        b = randDigits(c.bDigits) || 1
-        a = b
-        answer = 1
+        b = 1
+        a = rand(1, aMax)
+        answer = a
       }
       break
     }

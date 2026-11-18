@@ -134,8 +134,8 @@ function u(op, key, val) {
         </div>
 
         <div class="setting-group">
-          <div class="setting-title">Nombre de chiffres</div>
-          <p class="digits-hint">Pour chaque opération, choisis le nombre de chiffres du terme A et du terme B.</p>
+          <div class="setting-title">Nombre de chiffres (max)</div>
+          <p class="digits-hint">Pour chaque opération, choisis le nombre de chiffres maximum du terme A et du terme B (ex. 4 = jusqu’à 4 chiffres).</p>
         </div>
 
         <div class="setting-group">
@@ -143,13 +143,13 @@ function u(op, key, val) {
           <div class="range-row">
             <label>A</label>
             <select class="range-input" :value="localConfig['+'].aDigits" @change="u('+', 'aDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
           <div class="range-row">
             <label>B</label>
             <select class="range-input" :value="localConfig['+'].bDigits" @change="u('+', 'bDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
         </div>
@@ -159,13 +159,13 @@ function u(op, key, val) {
           <div class="range-row">
             <label>A</label>
             <select class="range-input" :value="localConfig['-'].aDigits" @change="u('-', 'aDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
           <div class="range-row">
             <label>B</label>
             <select class="range-input" :value="localConfig['-'].bDigits" @change="u('-', 'bDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
           <p class="digits-note">Le résultat sera toujours ≥ 0.</p>
@@ -176,13 +176,13 @@ function u(op, key, val) {
           <div class="range-row">
             <label>A</label>
             <select class="range-input" :value="localConfig['×'].aDigits" @change="u('×', 'aDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
           <div class="range-row">
             <label>B</label>
             <select class="range-input" :value="localConfig['×'].bDigits" @change="u('×', 'bDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
         </div>
@@ -192,13 +192,13 @@ function u(op, key, val) {
           <div class="range-row">
             <label>A</label>
             <select class="range-input" :value="localConfig['÷'].aDigits" @change="u('÷', 'aDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
           <div class="range-row">
             <label>B</label>
             <select class="range-input" :value="localConfig['÷'].bDigits" @change="u('÷', 'bDigits', +$event.target.value)">
-              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+              <option v-for="n in 4" :key="n" :value="n">Jusqu’à {{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
             </select>
           </div>
           <p class="digits-note">La division restera toujours entière.</p>
@@ -407,7 +407,7 @@ function u(op, key, val) {
 
 select.range-input {
   width: auto;
-  min-width: 120px;
+  min-width: 150px;
   padding: 0 0.4rem;
   text-align: left;
   background: white;
