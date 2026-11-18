@@ -99,7 +99,7 @@ watch(scores, () => {
 
 function openNewGame(mode) {
   const saved = loadDraft()
-  if (mode === 'normal' || mode === 'table' || mode === 'mix') saved.gameMode = mode
+  if (mode === 'calculs' || mode === 'table' || mode === 'mix') saved.gameMode = mode
   draft.value = saved
   reviewTarget.value = null
   reviewFeedback.value = ''

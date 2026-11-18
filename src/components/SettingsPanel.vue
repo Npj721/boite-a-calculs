@@ -62,13 +62,13 @@ function u(op, key, val) {
     <div class="settings-body">
       <div class="setting-group">
         <div class="mode-selector">
-          <button :class="{ active: gameMode === 'normal' }" @click="emit('update:gameMode', 'normal')">🧮 Normal</button>
-          <button :class="{ active: gameMode === 'mix' }" @click="emit('update:gameMode', 'mix')">🔀 Mixte</button>
+          <button :class="{ active: gameMode === 'calculs' }" @click="emit('update:gameMode', 'calculs')">🧮 Calculs</button>
           <button :class="{ active: gameMode === 'table' }" @click="emit('update:gameMode', 'table')">📋 Tables</button>
+          <button :class="{ active: gameMode === 'mix' }" @click="emit('update:gameMode', 'mix')">🔀 Mixte</button>
         </div>
       </div>
 
-      <div v-if="gameMode === 'normal'" class="setting-group">
+      <div v-if="gameMode === 'calculs'" class="setting-group">
         <div class="setting-title">Niveau de difficulté</div>
         <div class="difficulty-selector">
           <button
@@ -125,7 +125,7 @@ function u(op, key, val) {
 
       <div v-if="gameMode === 'mix'" class="settings-section-label">Partie calculs</div>
 
-      <template v-if="gameMode === 'mix' || (gameMode === 'normal' && difficulty === 'custom')">
+      <template v-if="gameMode === 'mix' || (gameMode === 'calculs' && difficulty === 'custom')">
         <div class="setting-group">
           <div class="setting-title">{{ gameMode === 'mix' ? 'Opérations calculs' : 'Opérations' }}</div>
           <div class="op-toggles">

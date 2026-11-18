@@ -55,20 +55,20 @@ async function confirmDelete(game) {
       <h1 class="hero-title">Boîte à Calculs</h1>
       <p class="hero-sub">Reprends une partie ou lance-toi dans un nouveau défi !</p>
       <div class="mode-buttons">
-        <button class="mode-choice normal" @click="emit('new-game', 'normal')">
+        <button class="mode-choice calculs" @click="emit('new-game', 'calculs')">
           <span class="choice-icon">🧮</span>
-          <span class="choice-title">Mode normal</span>
+          <span class="choice-title">Calculs</span>
           <span class="choice-sub">+ − × ÷</span>
+        </button>
+        <button class="mode-choice table" @click="emit('new-game', 'table')">
+          <span class="choice-icon">📋</span>
+          <span class="choice-title">Tables</span>
+          <span class="choice-sub">Tables de 1 à 9</span>
         </button>
         <button class="mode-choice mix" @click="emit('new-game', 'mix')">
           <span class="choice-icon">🔀</span>
           <span class="choice-title">Mode mixte</span>
           <span class="choice-sub">Calculs + tables</span>
-        </button>
-        <button class="mode-choice table" @click="emit('new-game', 'table')">
-          <span class="choice-icon">📋</span>
-          <span class="choice-title">Mode tables</span>
-          <span class="choice-sub">Tables de 1 à 9</span>
         </button>
       </div>
     </div>
@@ -176,7 +176,7 @@ async function confirmDelete(game) {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
-.mode-choice.normal { background: linear-gradient(135deg, #FF6B6B, #ee5a24); }
+.mode-choice.calculs { background: linear-gradient(135deg, #FF6B6B, #ee5a24); }
 .mode-choice.mix { background: linear-gradient(135deg, #667eea, #764ba2); }
 .mode-choice.table { background: linear-gradient(135deg, #4ECDC4, #44B09E); }
 

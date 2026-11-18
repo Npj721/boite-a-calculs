@@ -103,7 +103,7 @@ export const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard', 'custom']
 
 export function defaultSettings() {
   return {
-    gameMode: 'normal',
+    gameMode: 'calculs',
     mode: 'flip',
     difficulty: 'custom',
     duration: 120,
@@ -119,7 +119,7 @@ export function normalizeSettings(raw) {
   const base = defaultSettings()
   if (!raw || typeof raw !== 'object') return base
 
-  const gameMode = raw.gameMode === 'table' || raw.gameMode === 'mix' ? raw.gameMode : 'normal'
+  const gameMode = raw.gameMode === 'table' || raw.gameMode === 'mix' ? raw.gameMode : 'calculs'
 
   const settings = {
     ...base,
@@ -355,7 +355,7 @@ export function normalizeGame(raw) {
     ...raw,
     id: typeof raw.id === 'string' ? raw.id : `g-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     createdAt: Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now(),
-    gameMode: raw.gameMode === 'table' || raw.gameMode === 'mix' ? raw.gameMode : 'normal',
+    gameMode: raw.gameMode === 'table' || raw.gameMode === 'mix' ? raw.gameMode : 'calculs',
     mode: raw.mode === 'input' ? 'input' : 'flip',
     duration,
     maxTimePerCalc,
