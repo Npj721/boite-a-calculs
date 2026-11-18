@@ -10,6 +10,7 @@ import {
   clone,
   createGame,
   defaultSettings,
+  DIFFICULTY_PRESETS,
   isSettingsPlayable,
   normalizeGame,
   normalizeSettings,
@@ -107,6 +108,14 @@ function openNewGame(mode) {
 
 function toggleDraftOp(op) {
   draft.value.opOptions = { ...draft.value.opOptions, [op]: !draft.value.opOptions[op] }
+}
+
+function applyDifficulty(level) {
+  draft.value.difficulty = level
+  const preset = DIFFICULTY_PRESETS[level]
+  if (!preset) return
+  draft.value.opOptions = clone(preset.opOptions)
+  draft.value.config = clone(preset.config)
 }
 
 function handleUpdateConfig({ op, key, val }) {
@@ -317,6 +326,7 @@ function cancelReview() {
       v-if="showSettings"
       :game-mode="draft.gameMode"
       :mode="draft.mode"
+      :difficulty="draft.difficulty"
       :duration="draft.duration"
       :local-max-time="draft.maxTimePerCalc"
       :op-options="draft.opOptions"
@@ -327,6 +337,7 @@ function cancelReview() {
       @toggle-settings="showSettings = false"
       @update:game-mode="draft.gameMode = $event"
       @update:mode="draft.mode = $event"
+      @apply-difficulty="applyDifficulty"
       @update:duration="draft.duration = $event"
       @update:local-max-time="draft.maxTimePerCalc = $event"
       @toggle-op="toggleDraftOp"

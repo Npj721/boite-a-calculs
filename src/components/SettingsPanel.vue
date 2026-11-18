@@ -1,7 +1,11 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+import { DIFFICULTY_PRESETS } from '@/lib/game'
+
+const props = defineProps({
   gameMode: String,
   mode: String,
+  difficulty: { type: String, default: 'custom' },
   duration: Number,
   localMaxTime: Number,
   opOptions: Object,
@@ -15,6 +19,7 @@ const emit = defineEmits([
   'toggle-settings',
   'update:gameMode',
   'update:mode',
+  'apply-difficulty',
   'update:duration',
   'update:localMaxTime',
   'toggle-op',
@@ -24,6 +29,21 @@ const emit = defineEmits([
   'reset-config',
   'start-game'
 ])
+
+const difficultyOptions = [
+  ...Object.entries(DIFFICULTY_PRESETS).map(([key, preset]) => ({
+    key,
+    label: preset.label,
+    icon: preset.icon,
+    description: preset.description
+  })),
+  { key: 'custom', label: 'Custom', icon: '🛠️', description: 'Toutes les options de calcul disponibles' }
+]
+
+const presetHint = computed(() => {
+  const option = difficultyOptions.find(item => item.key === props.difficulty)
+  return option ? option.description : ''
+})
 
 function u(op, key, val) {
   emit('update-config', { op, key, val })
@@ -46,6 +66,23 @@ function u(op, key, val) {
           <button :class="{ active: gameMode === 'mix' }" @click="emit('update:gameMode', 'mix')">🔀 Mixte</button>
           <button :class="{ active: gameMode === 'table' }" @click="emit('update:gameMode', 'table')">📋 Tables</button>
         </div>
+      </div>
+
+      <div v-if="gameMode === 'normal'" class="setting-group">
+        <div class="setting-title">Niveau de difficulté</div>
+        <div class="difficulty-selector">
+          <button
+            v-for="option in difficultyOptions"
+            :key="option.key"
+            class="difficulty-btn"
+            :class="{ active: difficulty === option.key }"
+            @click="emit('apply-difficulty', option.key)"
+          >
+            <span class="difficulty-icon">{{ option.icon }}</span>
+            <span>{{ option.label }}</span>
+          </button>
+        </div>
+        <p v-if="presetHint" class="difficulty-hint">{{ presetHint }}</p>
       </div>
 
       <div class="setting-group">
@@ -88,7 +125,7 @@ function u(op, key, val) {
 
       <div v-if="gameMode === 'mix'" class="settings-section-label">Partie calculs</div>
 
-      <template v-if="gameMode === 'normal' || gameMode === 'mix'">
+      <template v-if="gameMode === 'mix' || (gameMode === 'normal' && difficulty === 'custom')">
         <div class="setting-group">
           <div class="setting-title">{{ gameMode === 'mix' ? 'Opérations calculs' : 'Opérations' }}</div>
           <div class="op-toggles">
@@ -97,72 +134,74 @@ function u(op, key, val) {
         </div>
 
         <div class="setting-group">
-          <div class="setting-title">➕ Addition</div>
+          <div class="setting-title">Nombre de chiffres</div>
+          <p class="digits-hint">Pour chaque opération, choisis le nombre de chiffres du terme A et du terme B.</p>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-title">➕ Addition (A + B)</div>
           <div class="range-row">
-            <label>a</label>
-            <input class="range-input" type="number" :value="localConfig['+'].aMin" @input="u('+', 'aMin', +$event.target.value)" min="0" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['+'].aMax" @input="u('+', 'aMax', +$event.target.value)" min="0" max="999">
+            <label>A</label>
+            <select class="range-input" :value="localConfig['+'].aDigits" @change="u('+', 'aDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
           </div>
           <div class="range-row">
-            <label>b</label>
-            <input class="range-input" type="number" :value="localConfig['+'].bMin" @input="u('+', 'bMin', +$event.target.value)" min="0" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['+'].bMax" @input="u('+', 'bMax', +$event.target.value)" min="0" max="999">
+            <label>B</label>
+            <select class="range-input" :value="localConfig['+'].bDigits" @change="u('+', 'bDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
           </div>
         </div>
 
         <div class="setting-group">
-          <div class="setting-title">➖ Soustraction</div>
+          <div class="setting-title">➖ Soustraction (A − B)</div>
           <div class="range-row">
-            <label>a</label>
-            <input class="range-input" type="number" :value="localConfig['-'].aMin" @input="u('-', 'aMin', +$event.target.value)" min="0" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['-'].aMax" @input="u('-', 'aMax', +$event.target.value)" min="0" max="999">
+            <label>A</label>
+            <select class="range-input" :value="localConfig['-'].aDigits" @change="u('-', 'aDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
           </div>
           <div class="range-row">
-            <label>b</label>
-            <input class="range-input" type="number" :value="localConfig['-'].bMin" @input="u('-', 'bMin', +$event.target.value)" min="0" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['-'].bMax" @input="u('-', 'bMax', +$event.target.value)" min="0" max="999">
+            <label>B</label>
+            <select class="range-input" :value="localConfig['-'].bDigits" @change="u('-', 'bDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
+          </div>
+          <p class="digits-note">Le résultat sera toujours ≥ 0.</p>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-title">✖️ Multiplication (A × B)</div>
+          <div class="range-row">
+            <label>A</label>
+            <select class="range-input" :value="localConfig['×'].aDigits" @change="u('×', 'aDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
+          </div>
+          <div class="range-row">
+            <label>B</label>
+            <select class="range-input" :value="localConfig['×'].bDigits" @change="u('×', 'bDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
           </div>
         </div>
 
         <div class="setting-group">
-          <div class="setting-title">✖️ Multiplication</div>
+          <div class="setting-title">➗ Division (A ÷ B)</div>
           <div class="range-row">
-            <label>a</label>
-            <input class="range-input" type="number" :value="localConfig['×'].aMin" @input="u('×', 'aMin', +$event.target.value)" min="0" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['×'].aMax" @input="u('×', 'aMax', +$event.target.value)" min="0" max="999">
+            <label>A</label>
+            <select class="range-input" :value="localConfig['÷'].aDigits" @change="u('÷', 'aDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
           </div>
           <div class="range-row">
-            <label>b</label>
-            <input class="range-input" type="number" :value="localConfig['×'].bMin" @input="u('×', 'bMin', +$event.target.value)" min="0" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['×'].bMax" @input="u('×', 'bMax', +$event.target.value)" min="0" max="999">
+            <label>B</label>
+            <select class="range-input" :value="localConfig['÷'].bDigits" @change="u('÷', 'bDigits', +$event.target.value)">
+              <option v-for="n in 4" :key="n" :value="n">{{ n }} chiffre{{ n > 1 ? 's' : '' }}</option>
+            </select>
           </div>
-        </div>
-
-        <div class="setting-group">
-          <div class="setting-title">➗ Division</div>
-          <div class="range-row">
-            <label>div.</label>
-            <input class="range-input" type="number" :value="localConfig['÷'].divisorMin" @input="u('÷', 'divisorMin', +$event.target.value)" min="1" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['÷'].divisorMax" @input="u('÷', 'divisorMax', +$event.target.value)" min="1" max="999">
-          </div>
-          <div class="range-row">
-            <label>rép.</label>
-            <input class="range-input" type="number" :value="localConfig['÷'].answerMin" @input="u('÷', 'answerMin', +$event.target.value)" min="1" max="999">
-            <span class="range-sep">─</span>
-            <input class="range-input" type="number" :value="localConfig['÷'].answerMax" @input="u('÷', 'answerMax', +$event.target.value)" min="1" max="999">
-          </div>
-          <div class="range-row">
-            <label>max</label>
-            <input class="range-input range-full" type="number" :value="localConfig['÷'].dividendMax" @input="u('÷', 'dividendMax', +$event.target.value)" min="1" max="999">
-            <span class="range-label">dividende max</span>
-          </div>
+          <p class="digits-note">La division restera toujours entière.</p>
         </div>
       </template>
 
@@ -293,6 +332,46 @@ function u(op, key, val) {
   text-align: center;
 }
 
+.difficulty-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+}
+
+.difficulty-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.4rem;
+  border: 3px solid #ddd;
+  border-radius: 12px;
+  background: #f5f5f5;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #999;
+  font-family: inherit;
+}
+
+.difficulty-btn.active {
+  border-color: #4ECDC4;
+  background: white;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.difficulty-icon { font-size: 1.1rem; }
+
+.difficulty-hint {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: bold;
+  text-align: center;
+}
+
 .range-row {
   display: flex;
   align-items: center;
@@ -325,6 +404,27 @@ function u(op, key, val) {
 .range-sep { color: #ccc; font-size: 0.9rem; }
 .range-input.range-full { width: 80px; }
 .range-label { font-size: 0.8rem; color: #999; font-weight: bold; }
+
+select.range-input {
+  width: auto;
+  min-width: 120px;
+  padding: 0 0.4rem;
+  text-align: left;
+  background: white;
+}
+
+.digits-hint, .digits-note {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: bold;
+  margin: 0;
+}
+
+.digits-note {
+  margin-top: 0.4rem;
+  font-style: italic;
+  color: #777;
+}
 
 .btn-reset-config {
   background: #f0f0f0;

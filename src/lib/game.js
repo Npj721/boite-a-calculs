@@ -1,12 +1,5 @@
 export const COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8E6CF', '#FFB347', '#E8A0BF', '#95E1D3', '#F38181']
 
-export const DEFAULT_CONFIG = {
-  '+': { aMin: 1, aMax: 50, bMin: 1, bMax: 50 },
-  '-': { aMin: 2, aMax: 99, bMin: 1, bMax: 50 },
-  '×': { aMin: 2, aMax: 9, bMin: 2, bMax: 9 },
-  '÷': { divisorMin: 2, divisorMax: 9, answerMin: 1, answerMax: 12, dividendMax: 81 }
-}
-
 export function clone(value) {
   return JSON.parse(JSON.stringify(value))
 }
@@ -21,10 +14,101 @@ function clampInt(value, min, max, fallback) {
   return Math.min(max, Math.max(min, Math.round(n)))
 }
 
+export function digitRange(digits) {
+  const d = clampInt(digits, 1, 4, 1)
+  if (d <= 1) return [1, 9]
+  const min = 10 ** (d - 1)
+  const max = 10 ** d - 1
+  return [min, max]
+}
+
+export function randDigits(digits) {
+  const [min, max] = digitRange(digits)
+  return rand(min, max)
+}
+
+function digitsFromMax(max) {
+  const n = Math.max(1, Math.abs(Number(max) || 1))
+  return clampInt(String(Math.floor(n)).length, 1, 4, 1)
+}
+
+function normalizeOpConfig(op, raw) {
+  const base = DEFAULT_CONFIG[op]
+  if (!raw || typeof raw !== 'object') return { ...base }
+
+  if ('aDigits' in raw || 'bDigits' in raw) {
+    return {
+      aDigits: clampInt(raw.aDigits, 1, 4, base.aDigits),
+      bDigits: clampInt(raw.bDigits, 1, 4, base.bDigits)
+    }
+  }
+
+  // Migration depuis l'ancien format (min/max)
+  if (op === '÷') {
+    const aDigits = raw.dividendMax != null
+      ? digitsFromMax(raw.dividendMax)
+      : Math.max(digitsFromMax(raw.divisorMax), digitsFromMax(raw.answerMax))
+    const bDigits = digitsFromMax(raw.divisorMax ?? raw.divisorMin)
+    return {
+      aDigits: clampInt(aDigits, 1, 4, base.aDigits),
+      bDigits: clampInt(bDigits, 1, 4, base.bDigits)
+    }
+  }
+
+  return {
+    aDigits: clampInt(digitsFromMax(raw.aMax ?? raw.aMin), 1, 4, base.aDigits),
+    bDigits: clampInt(digitsFromMax(raw.bMax ?? raw.bMin), 1, 4, base.bDigits)
+  }
+}
+
+export const DEFAULT_CONFIG = {
+  '+': { aDigits: 2, bDigits: 2 },
+  '-': { aDigits: 2, bDigits: 2 },
+  '×': { aDigits: 1, bDigits: 1 },
+  '÷': { aDigits: 2, bDigits: 1 }
+}
+
+export const DIFFICULTY_PRESETS = {
+  easy: {
+    label: 'Facile',
+    icon: '🌱',
+    description: 'Petits nombres (1 chiffre)',
+    opOptions: { '+': true, '-': true, '×': true, '÷': true },
+    config: {
+      '+': { aDigits: 1, bDigits: 1 },
+      '-': { aDigits: 1, bDigits: 1 },
+      '×': { aDigits: 1, bDigits: 1 },
+      '÷': { aDigits: 2, bDigits: 1 }
+    }
+  },
+  medium: {
+    label: 'Moyen',
+    icon: '⚖️',
+    description: 'Nombres à 2 chiffres',
+    opOptions: { '+': true, '-': true, '×': true, '÷': true },
+    config: clone(DEFAULT_CONFIG)
+  },
+  hard: {
+    label: 'Difficile',
+    icon: '🔥',
+    description: 'Grands nombres (2 à 3 chiffres)',
+    opOptions: { '+': true, '-': true, '×': true, '÷': true },
+    config: {
+      '+': { aDigits: 3, bDigits: 2 },
+      '-': { aDigits: 3, bDigits: 2 },
+      '×': { aDigits: 2, bDigits: 1 },
+      '÷': { aDigits: 3, bDigits: 1 }
+    }
+  }
+}
+
+export const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard', 'custom']
+
 export function defaultSettings() {
   return {
     gameMode: 'normal',
     mode: 'flip',
+    difficulty: 'custom',
     duration: 120,
     maxTimePerCalc: 30,
     opOptions: { '+': true, '-': true, '×': true, '÷': true },
@@ -45,6 +129,7 @@ export function normalizeSettings(raw) {
     ...raw,
     gameMode,
     mode: raw.mode === 'input' ? 'input' : 'flip',
+    difficulty: DIFFICULTY_LEVELS.includes(raw.difficulty) ? raw.difficulty : 'custom',
     duration: clampInt(raw.duration, 10, 600, base.duration),
     maxTimePerCalc: clampInt(raw.maxTimePerCalc, 5, 120, base.maxTimePerCalc),
     opOptions: { ...base.opOptions, ...(raw.opOptions || {}) },
@@ -54,7 +139,7 @@ export function normalizeSettings(raw) {
   }
 
   for (const op of Object.keys(base.config)) {
-    settings.config[op] = { ...base.config[op], ...((raw.config && raw.config[op]) || {}) }
+    settings.config[op] = normalizeOpConfig(op, raw.config && raw.config[op])
   }
 
   return settings
@@ -89,31 +174,46 @@ function createPaper(settings) {
   switch (op) {
     case '+': {
       const c = cfg['+']
-      a = rand(c.aMin, c.aMax)
-      b = rand(c.bMin, Math.min(c.bMax, c.aMax + c.bMax - a))
+      a = randDigits(c.aDigits)
+      b = randDigits(c.bDigits)
       answer = a + b
       break
     }
     case '-': {
       const c = cfg['-']
-      b = rand(c.bMin, c.bMax)
-      a = rand(Math.max(c.aMin, b + 1), c.aMax)
+      b = randDigits(c.bDigits)
+      const [aMin, aMax] = digitRange(c.aDigits)
+      const minA = Math.max(aMin, b)
+      a = minA <= aMax ? rand(minA, aMax) : b
       answer = a - b
       break
     }
     case '×': {
       const c = cfg['×']
-      a = rand(c.aMin, c.aMax)
-      b = rand(c.bMin, c.bMax)
+      a = randDigits(c.aDigits)
+      b = randDigits(c.bDigits)
       answer = a * b
       break
     }
     case '÷': {
       const c = cfg['÷']
-      b = rand(c.divisorMin, c.divisorMax)
-      const maxAnswer = Math.min(c.answerMax, Math.floor(c.dividendMax / b))
-      answer = rand(c.answerMin, Math.max(c.answerMin, maxAnswer))
-      a = b * answer
+      const [aMin, aMax] = digitRange(c.aDigits)
+      for (let attempt = 0; attempt < 40; attempt++) {
+        b = randDigits(c.bDigits)
+        if (b === 0) continue
+        const kMin = Math.ceil(aMin / b)
+        const kMax = Math.floor(aMax / b)
+        if (kMin <= kMax) {
+          answer = rand(kMin, kMax)
+          a = b * answer
+          break
+        }
+      }
+      if (a == null) {
+        b = randDigits(c.bDigits) || 1
+        a = b
+        answer = 1
+      }
       break
     }
   }
